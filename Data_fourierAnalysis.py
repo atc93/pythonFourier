@@ -152,7 +152,7 @@ pt2.Draw("same")
 
 c.Draw()
 if ( printPlot == 1 ):
-    c.Print('Real_t0_{0:.4f}_tS_{1}_tm_{2}.eps'.format(t0, tS, tm))
+    c.Print('Real_t0_{0:.5f}_tS_{1}_tm_{2}.eps'.format(t0, tS, tm))
 
 # In[ ]:
 
@@ -247,7 +247,7 @@ pt2.Draw("same")
 c.Draw()    
 
 if ( printPlot == 1 ):
-    c.Print('FirstApproximation_t0_{0:.4f}_tS_{1}_tm_{2}.eps'.format(t0, tS, tm))
+    c.Print('FirstApproximation_t0_{0:.5f}_tS_{1}_tm_{2}.eps'.format(t0, tS, tm))
 
 
 # # Delta Correction
@@ -359,7 +359,7 @@ pt.Draw("same")
 pt2.Draw("same")    
 c.Draw()    
 if ( printPlot == 1 ):
-    c.Print('Parabola_t0_{0:.4f}_tS_{1}_tm_{2}.eps'.format(t0, tS, tm))    
+    c.Print('Parabola_t0_{0:.5f}_tS_{1}_tm_{2}.eps'.format(t0, tS, tm))    
 
 
 # # Complete distribution
@@ -415,7 +415,7 @@ pt.Draw("same")
 pt2.Draw("same")    
 c.Draw()    
 if ( printPlot == 1 ):
-    c.Print('CompleteDistribution_t0_{0:.4f}_tS_{1}_tm_{2}.eps'.format(t0, tS, tm))    
+    c.Print('CompleteDistribution_t0_{0:.5f}_tS_{1}_tm_{2}.eps'.format(t0, tS, tm))    
 
 
 # # Conversion frequency -> radius
@@ -481,7 +481,7 @@ msd /= sum
 graph.Draw('AP')
 c.Draw()
 if ( printPlot == 1 ):
-    c.Print('Radial_t0_{0:.4f}_tS_{1}_tm_{2}.eps'.format(t0, tS, tm))    
+    c.Print('Radial_t0_{0:.5f}_tS_{1}_tm_{2}.eps'.format(t0, tS, tm))    
 
 
 #print 'a = ', a
