@@ -1,4 +1,5 @@
-*eps
-*log
-*root
-*txt
+*.eps
+*.log
+*.root
+*.txt
+*.png
