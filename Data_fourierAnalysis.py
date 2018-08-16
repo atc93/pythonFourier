@@ -1,10 +1,6 @@
-
 # coding: utf-8
 
-# # Module imports
-
-# In[1]:
-
+## Module importS
 
 import ROOT as r
 import math
@@ -15,9 +11,10 @@ import matplotlib.pyplot as plt
 import sys
 from scipy.optimize import curve_fit
 
-printPlot = 0
+printPlot = 1
+saveROOT  = 1
 
-# # Get command line arguments
+## Get command line argumentS
 
 cmdargs = str(sys.argv)
 
@@ -27,6 +24,7 @@ tm = float( str(sys.argv[3]) )
 fieldIndex = float( str(sys.argv[4]) )
 outTextFile = str(sys.argv[5])
 inputFile = str(sys.argv[6])
+outputFile = str(sys.argv[7])
 
 print ' ================ '
 print '   t0 = ', t0
@@ -35,62 +33,77 @@ print '   tm = ', tm
 print '   n  = ', fieldIndex
 print ' ================ '
 
-# # Set Canvas style
-
-# In[2]:
-
+## Set Canvas style
 
 c = r.TCanvas('c1','c1',900,600)
-c.SetGridx()
-c.SetGridy()
+#c.SetGridx()
+#c.SetGridy()
 c.SetTicks(1)
 r.gStyle.SetOptStat(0)
+c.SetLeftMargin(0.15);
+c.SetRightMargin(0.05);
+c.SetTopMargin(0.05);
+c.SetBottomMargin(0.15);
 
 
-# # Retrieve and plot histogram from ROOT file
+## Retrieve and plot histogram from ROOT file
 
-# In[4]:
 
 #fileName = '~/python/' + inputFile
 fileName = inputFile
 file = r.TFile(fileName)
 fr = file.Get('fr')
-fr.SetTitle("Toy Model Fast Rotation")
-
-# In[5]:
-
+fr.SetTitle("")
+fr.GetYaxis().SetTitle("Intensity [a.u.]")
 
 fr.Draw()
-fr.GetXaxis().SetRangeUser(4,100)
+fr.GetXaxis().SetRangeUser(tS,tS+1)
 c.Draw("")   
 if ( printPlot == 1 ):
-    c.Print("DataFRS.eps")
+    c.Print('plots/eps/FRS_{3}us_{4}us_t0_{0:.5f}_tS_{1}_tm_{2}.eps'.format(t0, tS, tm, tS,tS+1))    
+    c.Print('plots/png/FRS_{3}us_{4}us_t0_{0:.5f}_tS_{1}_tm_{2}.png'.format(t0, tS, tm, tS,tS+1))    
+fr.GetXaxis().SetRangeUser(tS,tS+10)
+c.Draw("")   
+if ( printPlot == 1 ):
+    c.Print('plots/eps/FRS_{3}us_{4}us_t0_{0:.5f}_tS_{1}_tm_{2}.eps'.format(t0, tS, tm, tS,tS+10))    
+    c.Print('plots/png/FRS_{3}us_{4}us_t0_{0:.5f}_tS_{1}_tm_{2}.png'.format(t0, tS, tm, tS,tS+10))    
+fr.GetXaxis().SetRangeUser(tS,tS+50)
+c.Draw("")   
+if ( printPlot == 1 ):
+    c.Print('plots/eps/FRS_{3}us_{4}us_t0_{0:.5f}_tS_{1}_tm_{2}.eps'.format(t0, tS, tm, tS,tS+50))    
+    c.Print('plots/png/FRS_{3}us_{4}us_t0_{0:.5f}_tS_{1}_tm_{2}.png'.format(t0, tS, tm, tS,tS+50))    
+fr.GetXaxis().SetRangeUser(tS,tm)
+c.Draw("")   
+if ( printPlot == 1 ):
+    c.Print('plots/eps/FRS_{3}us_{4}us_t0_{0:.5f}_tS_{1}_tm_{2}.eps'.format(t0, tS, tm, tS,tm))    
+    c.Print('plots/png/FRS_{3}us_{4}us_t0_{0:.5f}_tS_{1}_tm_{2}.png'.format(t0, tS, tm, tS,tm))    
 
 
 # # Real transform
 
-# In[ ]:
+startBin = fr.FindBin(tS) 
+endBin   = fr.FindBin(tm)
 
+# Copy histogram to numpy array
+# Need intermediate list step for good performance
+# Otherwise need to copy over and over the array to itSelf addingt one value...
+binCenter = np.array([])
+binContent = np.array([])
+a = []
+b = []
+for j in range(startBin, endBin):
+    a.append( fr.GetBinContent(j) )
+    b.append( fr.GetBinCenter(j) )   
+    binContent = np.asarray(a)  
+    binCenter = np.asarray(b)   
 
+# Compute the cosine transform
 def calc_freq_dist(t0):
-    
-    startBin = fr.FindBin(tS) # assume we do not have the first 4 micro-seconds of data
-    endBin   = fr.FindBin(tm)
-        
+
     for i in range(150):
-        
-        frequency = 6.630 + i*0.001
-        integral = 0.
-        
-        for j in range(startBin, endBin):
-        
-            integral += fr.GetBinContent(j)*math.cos(2*math.pi*frequency*(fr.GetBinCenter(j)-t0))*0.001
-
-        
-        real.SetBinContent(i+1,integral)
-
-
-# In[ ]:
+        frequency = 6.6305 + i*0.001
+        integral = binContent*np.cos(2*math.pi*frequency*(binCenter-t0))*0.001
+        real.SetBinContent(i+1, (np.sum(integral))) 
 
 
 intensity, radius, minDelta, t0Array = array( 'd' ), array( 'd' ), array( 'd' ), array( 'd' )
@@ -152,31 +165,9 @@ pt2.Draw("same")
 
 c.Draw()
 if ( printPlot == 1 ):
-    c.Print('Real_t0_{0:.5f}_tS_{1}_tm_{2}.eps'.format(t0, tS, tm))
+    c.Print('plots/eps/Real_t0_{0:.5f}_tS_{1}_tm_{2}.eps'.format(t0, tS, tm))
 
-# In[ ]:
-
-
-#scaledt0Array = [i * 1000 for i in t0Array]
-#
-#def func(x, a, b, ):
-#    return a * x * x + b
-#
-#parameter, covariance_matrix = curve_fit(func, scaledt0Array, minDelta)
-#x = np.linspace(min(scaledt0Array), max(scaledt0Array), 5)
-#
-#plt.plot(scaledt0Array, minDelta, 'rx', label='data')
-#plt.ylabel('FOM')
-#plt.xlabel('t0 [ns]')
-#plt.plot(x, func(x, *parameter), '-b', label='fit')
-#plt.savefig('t0Opt_TM1_fine.eps', format='eps')
-#plt.show()
-
-
-# # First Apprxomiation
-
-# In[ ]:
-
+## First Apprxomiation
 
 approx = real.Clone()
 
@@ -247,7 +238,7 @@ pt2.Draw("same")
 c.Draw()    
 
 if ( printPlot == 1 ):
-    c.Print('FirstApproximation_t0_{0:.5f}_tS_{1}_tm_{2}.eps'.format(t0, tS, tm))
+    c.Print('plots/eps/FirstApproximation_t0_{0:.5f}_tS_{1}_tm_{2}.eps'.format(t0, tS, tm))
 
 
 # # Delta Correction
@@ -295,7 +286,7 @@ def minimization():
         y.append(real.GetBinContent(150-i))
 
     A = np.vstack([x, np.ones(len(x))]).T
-    m, c = np.linalg.lstsq(A, y,rcond=None)[0]
+    m, c = np.linalg.lstSq(A, y,rcond=None)[0]
 
     return m, c
 
@@ -359,7 +350,7 @@ pt.Draw("same")
 pt2.Draw("same")    
 c.Draw()    
 if ( printPlot == 1 ):
-    c.Print('Parabola_t0_{0:.5f}_tS_{1}_tm_{2}.eps'.format(t0, tS, tm))    
+    c.Print('plots/eps/Parabola_t0_{0:.5f}_tS_{1}_tm_{2}.eps'.format(t0, tS, tm))    
 
 
 # # Complete distribution
@@ -415,7 +406,7 @@ pt.Draw("same")
 pt2.Draw("same")    
 c.Draw()    
 if ( printPlot == 1 ):
-    c.Print('CompleteDistribution_t0_{0:.5f}_tS_{1}_tm_{2}.eps'.format(t0, tS, tm))    
+    c.Print('plots/eps/CompleteDistribution_t0_{0:.5f}_tS_{1}_tm_{2}.eps'.format(t0, tS, tm))    
 
 
 # # Conversion frequency -> radius
@@ -445,19 +436,73 @@ for i in range(1, 150):
     radius.append( speed / (2*math.pi*full.GetBinCenter(i)) )
     intensity.append( full.GetBinContent(i))
 
-xe = np.average(radius, axis=0, weights=intensity)    
-    
-graph = r.TGraph(150,radius,intensity)
-graph.SetTitle('Radial distribution')
-graph.GetXaxis().SetTitle("x_{e} [mm]")
-graph.GetYaxis().SetTitle("")
+
+xe = np.average(radius, axis=0, weightS=intensity)   
+maxI = np.amax(intensity)
+intensity = intensity/maxI
+
+graph = r.TGraph(149,radius,intensity)
+graph.SetTitle('')
+graph.GetXaxis().SetTitle("Radius [mm]")
+graph.GetYaxis().SetTitle("Arbitrary unitS")
 graph.GetXaxis().CenterTitle()
-graph.GetXaxis().SetTitleOffset(1.3)
-graph.GetXaxis().SetRangeUser(7067,7157)
-graph.GetXaxis().SetRangeUser(7067,7157)
+graph.GetYaxis().CenterTitle()
+graph.GetXaxis().SetTitleOffset(1.4)
+graph.GetXaxis().SetTitleSize(0.055);
+graph.GetXaxis().SetLabelSize(0.05);
+graph.GetYaxis().SetTitleOffset(1.4)
+graph.GetYaxis().SetTitleSize(0.055);
+graph.GetYaxis().SetLabelSize(0.05);
+graph.GetXaxis().SetRangeUser(7052,7172)
 graph.SetMarkerStyle(20)
 graph.SetMarkerSize(0.6)
 graph.SetMarkerColor(4)
+graph.SetLineColor(4)
+graphMin = -0.05
+graphMax = 1.1
+graph.SetMaximum(graphMax)
+graph.SetMinimum(graphMin)
+
+innerLine = r.TLine(7067, graphMin, 7067, graphMax)
+innerLine.SetLineWidth(2)
+outerLine = r.TLine(7157, graphMin, 7157, graphMax)
+outerLine.SetLineWidth(2)
+magicLine = r.TLine(7112, graphMin, 7112, graphMax)
+magicLine.SetLineWidth(1)
+magicLine.SetLineStyle(7)
+
+pt=r.TPaveText(7060, graphMax*0.45,7074,graphMax*0.55);
+pt2=r.TPaveText(7150,graphMax*0.45,7164,graphMax*0.55);
+pt3=r.TPaveText(7113,graphMax*0.04,7121,graphMax*0.11);
+pt.AddText("collimators");
+pt.AddText("aperture");
+pt.SetShadowColor(0);
+pt.SetBorderSize(1);
+pt.SetFillColor(0);
+pt.SetLineWidth(1);
+pt.SetLineColor(1);
+pt.SetTextAngle(90);
+pt2.AddText("collimators");
+pt2.AddText("aperture");
+pt2.SetShadowColor(0);
+pt2.SetBorderSize(1);
+pt2.SetFillColor(0);
+pt2.SetLineWidth(1);
+pt2.SetLineColor(1);
+pt2.SetTextAngle(90);
+pt3.AddText("magic");
+pt3.AddText("radius");
+pt3.SetShadowColor(0);
+pt3.SetBorderSize(1);
+pt3.SetFillColor(0);
+pt3.SetLineWidth(1);
+pt3.SetLineColor(1);
+
+
+if ( saveROOT == 1 ):
+    file = r.TFile(outputFile, "RECREATE")
+    graph.Write("rad")
+    file.Close()
 
 std = 0
 sum = 0
@@ -478,18 +523,28 @@ msd /= sum
 
 #print std
 
-graph.Draw('AP')
+graph.Draw('APL')
+innerLine.Draw("same")
+outerLine.Draw("same")
+magicLine.Draw("same")
+pt.Draw("same")
+pt2.Draw("same")
+pt3.Draw("same")
 c.Draw()
-if ( printPlot == 1 ):
-    c.Print('Radial_t0_{0:.5f}_tS_{1}_tm_{2}.eps'.format(t0, tS, tm))    
 
+if ( printPlot == 1 ):
+    c.Print('plotS/eps/Radial_t0_{0:.5f}_tS_{1}_tm_{2}.eps'.format(t0, tS, tm))    
+    c.Print('plotS/png/Radial_t0_{0:.5f}_tS_{1}_tm_{2}.png'.format(t0, tS, tm))    
+
+
+for x,y in zip(radius, intensity):
+    print x, y
 
 #print 'a = ', a
 #print 'b = ', b
 xe -= 7112
 
 C_E_reco  = -2*beta*beta*fieldIndex*(1-fieldIndex)*msd/(7112*7112)*1e9
-#print 'C_E truth ', C_E_truth, ' ppb'
 #print 'C_E reco  ', C_E_reco, ' ppb'
 
 text_file = open(str(outTextFile), "a")

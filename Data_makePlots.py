@@ -14,8 +14,8 @@ width   = np.loadtxt(filename, usecols=13)
 ce      = np.loadtxt(filename, usecols=15)
 
 nt0 = 16
-ntS = 10
-ntm = 1
+ntS = 13
+ntm = 4
 
 t0_list = []
 ce_list = []
@@ -71,7 +71,8 @@ for itm in range(0, ntm):
     plt.xlabel('$\mathregular{t_{0}}$ [ns]')
     plt.legend(loc=9, bbox_to_anchor=(.0, 1.088, 1.0, .07), ncol=3, mode="expand", prop={'size':6})
     plt.figtext(0.01, 0.01, textstr, fontsize=10)
-    plt.savefig(name + '_fom_t0Scan_tm' + str(tm[nt0*ntS*itm]) + '.eps', format='eps')
+    plt.savefig('plots/eps/' + name + '_fom_t0Scan_tm' + str(tm[nt0*ntS*itm]) + '.eps', format='eps')
+    plt.savefig('plots/png/' + name + '_fom_t0Scan_tm' + str(tm[nt0*ntS*itm]) + '.png', format='png')
     plt.close()
 
     plt.figure(2)
@@ -79,7 +80,8 @@ for itm in range(0, ntm):
     plt.xlabel('$\mathregular{t_{0}}$ [ns]')
     plt.legend(loc=9, bbox_to_anchor=(.0, 1.088, 1.0, .07), ncol=3, mode="expand", prop={'size':6})
     plt.figtext(0.01, 0.01, textstr, fontsize=10)
-    plt.savefig(name + '_ce_t0Scan_tm' + str(tm[nt0*ntS*itm]) + '.eps', format='eps')
+    plt.savefig('plots/eps/' + name + '_ce_t0Scan_tm' + str(tm[nt0*ntS*itm]) + '.eps', format='eps')
+    plt.savefig('plots/png/' + name + '_ce_t0Scan_tm' + str(tm[nt0*ntS*itm]) + '.png', format='png')
     plt.close()
 
     plt.figure(3)
@@ -87,7 +89,8 @@ for itm in range(0, ntm):
     plt.xlabel('$\mathregular{t_{0}}$ [ns]')
     plt.legend(loc=9, bbox_to_anchor=(.0, 1.088, 1.0, .07), ncol=3, mode="expand", prop={'size':6})
     plt.figtext(0.01, 0.01, textstr, fontsize=10)
-    plt.savefig(name + '_xe_t0Scan_tm' + str(tm[nt0*ntS*itm]) + '.eps', format='eps')
+    plt.savefig('plots/eps/' + name + '_xe_t0Scan_tm' + str(tm[nt0*ntS*itm]) + '.eps', format='eps')
+    plt.savefig('plots/png/' + name + '_xe_t0Scan_tm' + str(tm[nt0*ntS*itm]) + '.png', format='png')
     plt.close()
 
     plt.figure(4)
@@ -95,7 +98,8 @@ for itm in range(0, ntm):
     plt.xlabel('$\mathregular{t_{0}}$ [ns]')
     plt.legend(loc=9, bbox_to_anchor=(.0, 1.088, 1.0, .07), ncol=3, mode="expand", prop={'size':6})
     plt.figtext(0.01, 0.01, textstr, fontsize=10)
-    plt.savefig(name + '_width_t0Scan_tm' + str(tm[nt0*ntS*itm]) + '.eps', format='eps')
+    plt.savefig('plots/eps/' + name + '_width_t0Scan_tm' + str(tm[nt0*ntS*itm]) + '.eps', format='eps')
+    plt.savefig('plots/png/' + name + '_width_t0Scan_tm' + str(tm[nt0*ntS*itm]) + '.png', format='png')
     plt.close()
 
 print 'Number of C_E   entries: ' + str(len(ce_list))
@@ -105,17 +109,20 @@ print 'Number of width entries: ' + str(len(width_list))
 plt.figure(5)
 plt.xlabel('$\mathregular{C_{E}}$ [ppb]')
 plt.hist(ce_list, bins=30)
-plt.savefig('ce.eps', format='eps')
+plt.savefig('plots/eps/ce.eps', format='eps')
+plt.savefig('plots/png/ce.png', format='png')
 
 plt.figure(6)
 plt.xlabel('$\mathregular{x_{e}}$ [mm]')
 plt.hist(xe_list, bins=30)
-plt.savefig('xe.eps', format='eps')
+plt.savefig('plots/eps/xe.eps', format='eps')
+plt.savefig('plots/png/xe.png', format='png')
 
 plt.figure(7)
 plt.xlabel('$\mathregular{\sigma}$ [mm]')
 plt.hist(width_list, bins=30)
-plt.savefig('width.eps', format='eps')
+plt.savefig('plots/eps/width.eps', format='eps')
+plt.savefig('plots/png/width.eps', format='png')
 
 mean_ce = 0
 std_ce  = 0
