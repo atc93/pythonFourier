@@ -2,87 +2,48 @@
 
 ## Module importS
 
-import ROOT as r
-import math
-from array import array
-import numpy as np
-import thread
-import matplotlib.pyplot as plt
-import sys
-from scipy.optimize import curve_fit
-
-printPlot = 1
-saveROOT  = 1
+from importAll import *
 
 ## Get command line argumentS
 
 cmdargs = str(sys.argv)
 
-t0 = float( str(sys.argv[1]) )
-tS = float( str(sys.argv[2]) )
-tm = float( str(sys.argv[3]) )
-fieldIndex = float( str(sys.argv[4]) )
-outTextFile = str(sys.argv[5])
-inputFile = str(sys.argv[6])
-outputFile = str(sys.argv[7])
+inputRootFile   = str(sys.argv[1])
+outputRootFile  = str(sys.argv[2])
+outputTextFile  = str(sys.argv[3)
+histoName       = str(sys.argv[4])
+t0              = float(sys.argv[5]) # in mico-sec
+tS              = float(sys.argv[6]) # in mico-sec
+tM              = float(sys.argv[7]) # in mico-sec
+fieldIndex      = float(sys.argv[8)
+printPlot       = int(sys.argv[9])
+saveROOT        = int(sys.argv[10])
+tag             = str(sys.argv[11])
 
 print ' ================ '
 print '   t0 = ', t0
 print '   tS = ', tS
-print '   tm = ', tm
+print '   tM = ', tM
 print '   n  = ', fieldIndex
 print ' ================ '
 
-## Set Canvas style
+## Styling and plotting
 
-c = r.TCanvas('c1','c1',900,600)
-#c.SetGridx()
-#c.SetGridy()
-c.SetTicks(1)
-r.gStyle.SetOptStat(0)
-c.SetLeftMargin(0.15);
-c.SetRightMargin(0.05);
-c.SetTopMargin(0.05);
-c.SetBottomMargin(0.15);
-
+c = r.TCanvas('c','c',900,600)
+setCanvasStyle( c )
 
 ## Retrieve and plot histogram from ROOT file
 
 
-#fileName = '~/python/' + inputFile
-fileName = inputFile
-file = r.TFile(fileName)
-fr = file.Get('fr')
-fr.SetTitle("")
-fr.GetYaxis().SetTitle("Intensity [a.u.]")
-
-fr.Draw()
-fr.GetXaxis().SetRangeUser(tS,tS+1)
-c.Draw("")   
-if ( printPlot == 1 ):
-    c.Print('plots/eps/FRS_{3}us_{4}us_t0_{0:.5f}_tS_{1}_tm_{2}.eps'.format(t0, tS, tm, tS,tS+1))    
-    c.Print('plots/png/FRS_{3}us_{4}us_t0_{0:.5f}_tS_{1}_tm_{2}.png'.format(t0, tS, tm, tS,tS+1))    
-fr.GetXaxis().SetRangeUser(tS,tS+10)
-c.Draw("")   
-if ( printPlot == 1 ):
-    c.Print('plots/eps/FRS_{3}us_{4}us_t0_{0:.5f}_tS_{1}_tm_{2}.eps'.format(t0, tS, tm, tS,tS+10))    
-    c.Print('plots/png/FRS_{3}us_{4}us_t0_{0:.5f}_tS_{1}_tm_{2}.png'.format(t0, tS, tm, tS,tS+10))    
-fr.GetXaxis().SetRangeUser(tS,tS+50)
-c.Draw("")   
-if ( printPlot == 1 ):
-    c.Print('plots/eps/FRS_{3}us_{4}us_t0_{0:.5f}_tS_{1}_tm_{2}.eps'.format(t0, tS, tm, tS,tS+50))    
-    c.Print('plots/png/FRS_{3}us_{4}us_t0_{0:.5f}_tS_{1}_tm_{2}.png'.format(t0, tS, tm, tS,tS+50))    
-fr.GetXaxis().SetRangeUser(tS,tm)
-c.Draw("")   
-if ( printPlot == 1 ):
-    c.Print('plots/eps/FRS_{3}us_{4}us_t0_{0:.5f}_tS_{1}_tm_{2}.eps'.format(t0, tS, tm, tS,tm))    
-    c.Print('plots/png/FRS_{3}us_{4}us_t0_{0:.5f}_tS_{1}_tm_{2}.png'.format(t0, tS, tm, tS,tm))    
+inFile = r.TFile(fileName)
+fr = inFile.Get('fr')
+setHistogramStyle( fr, 'Time [#mus]', 'Intensity [a.u.]')
 
 
-# # Real transform
+## Real transform
 
 startBin = fr.FindBin(tS) 
-endBin   = fr.FindBin(tm)
+endBin   = fr.FindBin(tM)
 
 # Copy histogram to numpy array
 # Need intermediate list step for good performance
@@ -97,49 +58,44 @@ for j in range(startBin, endBin):
     binContent = np.asarray(a)  
     binCenter = np.asarray(b)   
 
-# Compute the cosine transform
-def calc_freq_dist(t0):
+# Fourier analysis starts here
 
-    for i in range(150):
-        frequency = 6.6305 + i*0.001
-        integral = binContent*np.cos(2*math.pi*frequency*(binCenter-t0))*0.001
-        real.SetBinContent(i+1, (np.sum(integral))) 
+intensity, radius, minDelta, = array( 'd' ), array( 'd' ), array( 'd' )
 
+cosine  = r.TH1D("cosine",  "cosine",   150,6630,6780)
+sine    = r.TH1D("sin",     "sine",     150,6630,6780)
 
-intensity, radius, minDelta, t0Array = array( 'd' ), array( 'd' ), array( 'd' ), array( 'd' )
+calc_cosine_dist(t0, cosine)
+calc_sine_dist(t0, sine)
 
-real = r.TH1D("freq","freq",150,6630,6780)
-calc_freq_dist(t0)
-
-real.GetXaxis().SetRangeUser(6630, 6700)
-minBin1 = real.GetMinimum()
-real.GetXaxis().SetRangeUser(6700, 6780)
-minBin2 = real.GetMinimum()
-real.GetXaxis().SetRangeUser(6630, 6780)
+cosine.GetXaxis().SetRangeUser(6630, 6700)
+minBin1 = cosine.GetMinimum()
+cosine.GetXaxis().SetRangeUser(6700, 6780)
+minBin2 = cosine.GetMinimum()
+cosine.GetXaxis().SetRangeUser(6630, 6780)
 
 fom = minBin1-minBin2
 
 minDelta.append(minBin1-minBin2)
-t0Array.append(t0)
 
-realClone = real.Clone()
-realClone.SetTitle('Real transform (t0= {0:.4f} #mus)'.format(t0))
-realClone.GetXaxis().SetTitle("Frequency [kHz]")
-realClone.GetXaxis().CenterTitle()
-realClone.GetXaxis().SetTitleOffset(1.3)
-realClone.SetLineColor(4)
-realClone.SetLineWidth(2)
+cosineClone = cosine.Clone()
+cosineClone.SetTitle('Real transform (t0= {0:.4f} #mus)'.format(t0))
+cosineClone.GetXaxis().SetTitle("Frequency [kHz]")
+cosineClone.GetXaxis().CenterTitle()
+cosineClone.GetXaxis().SetTitleOffset(1.3)
+cosineClone.SetLineColor(4)
+cosineClone.SetLineWidth(2)
 
-realClone.SetMaximum( realClone.GetMaximum()*1.3 ) 
-realClone.SetMinimum( realClone.GetMinimum()*1.2 ) 
+cosineClone.SetMaximum( cosineClone.GetMaximum()*1.3 ) 
+cosineClone.SetMinimum( cosineClone.GetMinimum()*1.2 ) 
 
-innerLine = r.TLine(6662.799323395121, realClone.GetMinimum(), 6662.799323395121, realClone.GetMaximum())
+innerLine = r.TLine(6662.799323395121, cosineClone.GetMinimum(), 6662.799323395121, cosineClone.GetMaximum())
 innerLine.SetLineWidth(3)
-outerLine = r.TLine(6747.651727400435, realClone.GetMinimum(), 6747.651727400435, realClone.GetMaximum())
+outerLine = r.TLine(6747.651727400435, cosineClone.GetMinimum(), 6747.651727400435, cosineClone.GetMaximum())
 outerLine.SetLineWidth(3)    
 
-pt=r.TPaveText(6650,realClone.GetMaximum()*0.38,6674,realClone.GetMaximum()*0.52);
-pt2=r.TPaveText(6737,realClone.GetMaximum()*0.38,6759,realClone.GetMaximum()*0.52);
+pt=r.TPaveText(6650,cosineClone.GetMaximum()*0.38,6674,cosineClone.GetMaximum()*0.52);
+pt2=r.TPaveText(6737,cosineClone.GetMaximum()*0.38,6759,cosineClone.GetMaximum()*0.52);
 pt.AddText("collimators");
 pt.AddText("aperture");
 pt.SetShadowColor(0);
@@ -157,7 +113,7 @@ pt2.SetLineWidth(1);
 pt2.SetLineColor(1);
 pt2.SetTextAngle(90);    
 
-realClone.Draw()
+cosineClone.Draw()
 innerLine.Draw("same")
 outerLine.Draw("same")
 pt.Draw("same")
@@ -165,11 +121,11 @@ pt2.Draw("same")
 
 c.Draw()
 if ( printPlot == 1 ):
-    c.Print('plots/eps/Real_t0_{0:.5f}_tS_{1}_tm_{2}.eps'.format(t0, tS, tm))
+    c.Print('plots/eps/Real_t0_{0:.5f}_tS_{1}_tM_{2}.eps'.format(t0, tS, tM))
 
 ## First Apprxomiation
 
-approx = real.Clone()
+approx = cosine.Clone()
 
 maxBin = approx.GetMaximumBin()
 
@@ -238,7 +194,7 @@ pt2.Draw("same")
 c.Draw()    
 
 if ( printPlot == 1 ):
-    c.Print('plots/eps/FirstApproximation_t0_{0:.5f}_tS_{1}_tm_{2}.eps'.format(t0, tS, tm))
+    c.Print('plots/eps/FirstApproximation_t0_{0:.5f}_tS_{1}_tM_{2}.eps'.format(t0, tS, tM))
 
 
 # # Delta Correction
@@ -247,22 +203,12 @@ if ( printPlot == 1 ):
 
 
 # Correction
-rcorrs = real.Clone()
-rcorrs.Scale(0)
-for i in range(150):
+parabola = cosine.Clone()
+parabola.Scale(0)
 
-        frq = 6630.5 + i*1
-        integral = 0
 
-        for j in range(1, 150):
-            if (approx.GetBinCenter(j)-frq) != 0:
-                integral += approx.GetBinContent(j)*math.sin(2*math.pi*(frq-approx.GetBinCenter(j))*(tS-0.0745)/1000)/(1000*(frq-approx.GetBinCenter(j))  )
-            else:
-                integral += 2*math.pi*approx.GetBinContent(j)*(tS-0.0745)/1000000
-
-        rcorrs.SetBinContent(i+1,integral)
-rcorrs.Draw()
-rcorrs.SetTitle("The parabola")
+parabola.Draw()
+parabola.SetTitle("The parabola")
 c.Update()
 c.Draw()
 
@@ -273,28 +219,12 @@ c.Draw()
 
 
 # a and b minimization
-def minimization():
-
-
-    x = []
-    y = []
-
-    for i in range(32):
-        x.append(rcorrs.GetBinContent(i+1))
-        y.append(real.GetBinContent(i+1))
-        x.append(rcorrs.GetBinContent(150-i))
-        y.append(real.GetBinContent(150-i))
-
-    A = np.vstack([x, np.ones(len(x))]).T
-    m, c = np.linalg.lstSq(A, y,rcond=None)[0]
-
-    return m, c
 
 
 # In[ ]:
 
 
-real.Draw()
+cosine.Draw()
 c.Draw()
 a,b = minimization()
 
@@ -304,28 +234,28 @@ a,b = minimization()
 
 
 for iBin in range(1,151):
-    rcorrs.SetBinContent(iBin, -1*( a*rcorrs.GetBinContent(iBin)+b) )
+    parabola.SetBinContent(iBin, -1*( a*parabola.GetBinContent(iBin)+b) )
     
     
-rcorrsClone = rcorrs.Clone()
-rcorrsClone.SetTitle("Parabola")    
+parabolaClone = parabola.Clone()
+parabolaClone.SetTitle("Parabola")    
     
-rcorrsClone.GetXaxis().SetTitle("Frequency [kHz]")
-rcorrsClone.GetXaxis().CenterTitle()
-rcorrsClone.GetXaxis().SetTitleOffset(1.3)
-rcorrsClone.SetLineColor(4)
-rcorrsClone.SetLineWidth(2)
+parabolaClone.GetXaxis().SetTitle("Frequency [kHz]")
+parabolaClone.GetXaxis().CenterTitle()
+parabolaClone.GetXaxis().SetTitleOffset(1.3)
+parabolaClone.SetLineColor(4)
+parabolaClone.SetLineWidth(2)
     
-rcorrsClone.SetMaximum( rcorrsClone.GetMaximum()*1.15 ) 
-rcorrsClone.SetMinimum( rcorrsClone.GetMinimum()*0.85 ) 
+parabolaClone.SetMaximum( parabolaClone.GetMaximum()*1.15 ) 
+parabolaClone.SetMinimum( parabolaClone.GetMinimum()*0.85 ) 
     
-innerLine = r.TLine(6662.799323395121, rcorrsClone.GetMinimum(), 6662.799323395121, rcorrsClone.GetMaximum())
+innerLine = r.TLine(6662.799323395121, parabolaClone.GetMinimum(), 6662.799323395121, parabolaClone.GetMaximum())
 innerLine.SetLineWidth(3)
-outerLine = r.TLine(6747.651727400435, rcorrsClone.GetMinimum(), 6747.651727400435, rcorrsClone.GetMaximum())
+outerLine = r.TLine(6747.651727400435, parabolaClone.GetMinimum(), 6747.651727400435, parabolaClone.GetMaximum())
 outerLine.SetLineWidth(3)    
 
-pt=r.TPaveText(6650,rcorrsClone.GetMaximum()*0.9,6674,rcorrsClone.GetMaximum()*1);
-pt2=r.TPaveText(6737,rcorrsClone.GetMaximum()*0.9,6759,rcorrsClone.GetMaximum()*1);
+pt=r.TPaveText(6650,parabolaClone.GetMaximum()*0.9,6674,parabolaClone.GetMaximum()*1);
+pt2=r.TPaveText(6737,parabolaClone.GetMaximum()*0.9,6759,parabolaClone.GetMaximum()*1);
 pt.AddText("collimators");
 pt.AddText("aperture");
 pt.SetShadowColor(0);
@@ -343,14 +273,14 @@ pt2.SetLineWidth(1);
 pt2.SetLineColor(1);
 pt2.SetTextAngle(90);    
     
-rcorrsClone.Draw()
+parabolaClone.Draw()
 innerLine.Draw("same")
 outerLine.Draw("same")
 pt.Draw("same")
 pt2.Draw("same")    
 c.Draw()    
 if ( printPlot == 1 ):
-    c.Print('plots/eps/Parabola_t0_{0:.5f}_tS_{1}_tm_{2}.eps'.format(t0, tS, tm))    
+    c.Print('plots/eps/Parabola_t0_{0:.5f}_tS_{1}_tM_{2}.eps'.format(t0, tS, tM))    
 
 
 # # Complete distribution
@@ -358,9 +288,9 @@ if ( printPlot == 1 ):
 # In[ ]:
 
 
-full = real.Clone()
+full = cosine.Clone()
 for iBin in range(1,151):
-    full.AddBinContent(iBin, rcorrs.GetBinContent(iBin) )
+    full.AddBinContent(iBin, parabola.GetBinContent(iBin) )
 full.SetTitle("Complete distribution")    
 
 fullClone = full.Clone()
@@ -406,7 +336,7 @@ pt.Draw("same")
 pt2.Draw("same")    
 c.Draw()    
 if ( printPlot == 1 ):
-    c.Print('plots/eps/CompleteDistribution_t0_{0:.5f}_tS_{1}_tm_{2}.eps'.format(t0, tS, tm))    
+    c.Print('plots/eps/CompleteDistribution_t0_{0:.5f}_tS_{1}_tM_{2}.eps'.format(t0, tS, tM))    
 
 
 # # Conversion frequency -> radius
@@ -500,7 +430,7 @@ pt3.SetLineColor(1);
 
 
 if ( saveROOT == 1 ):
-    file = r.TFile(outputFile, "RECREATE")
+    file = r.TFile(outputRootFile, "RECREATE")
     graph.Write("rad")
     file.Close()
 
@@ -533,8 +463,8 @@ pt3.Draw("same")
 c.Draw()
 
 if ( printPlot == 1 ):
-    c.Print('plotS/eps/Radial_t0_{0:.5f}_tS_{1}_tm_{2}.eps'.format(t0, tS, tm))    
-    c.Print('plotS/png/Radial_t0_{0:.5f}_tS_{1}_tm_{2}.png'.format(t0, tS, tm))    
+    c.Print('plotS/eps/Radial_t0_{0:.5f}_tS_{1}_tM_{2}.eps'.format(t0, tS, tM))    
+    c.Print('plotS/png/Radial_t0_{0:.5f}_tS_{1}_tM_{2}.png'.format(t0, tS, tM))    
 
 
 for x,y in zip(radius, intensity):
@@ -547,9 +477,9 @@ xe -= 7112
 C_E_reco  = -2*beta*beta*fieldIndex*(1-fieldIndex)*msd/(7112*7112)*1e9
 #print 'C_E reco  ', C_E_reco, ' ppb'
 
-text_file = open(str(outTextFile), "a")
-text_file.write('t0 %f tS %f tm %f fieldIndex %f fom %f xe_reco %f std_reco %f C_E_reco %f \n' % 
-        (t0, tS, tm, fieldIndex, fom, xe, std, C_E_reco) )
+text_file = open(str(outputTextFile), "a")
+text_file.write('t0 %f tS %f tM %f fieldIndex %f fom %f xe_reco %f std_reco %f C_E_reco %f \n' % 
+        (t0, tS, tM, fieldIndex, fom, xe, std, C_E_reco) )
 text_file.close()
 
 # In[ ]:

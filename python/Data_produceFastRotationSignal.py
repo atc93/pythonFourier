@@ -18,6 +18,7 @@ startFitTime    = int(sys.argv[7]) # in mico-sec
 endFitTime      = int(sys.argv[8]) # in mico-sec
 printPlot       = int(sys.argv[9])
 saveROOT        = int(sys.argv[10])
+tag             = str(sys.argv[11])
 
 ## Retrieve and plot histogram from ROOT file
 
@@ -32,11 +33,13 @@ c = r.TCanvas('c','c',900,600)
 setCanvasStyle( c )
 setHistogramStyle( signal, 'Time [#mus]', 'Intensity')
 
+signal.Write()
+
+times = [1,10,50, 100, tM]
+
 if ( printPlot == 1 ):
-    plot( c, signal, 'Intensity', tS, tS+1 )
-    plot( c, signal, 'Intensity', tS, tS+10 )
-    plot( c, signal, 'Intensity', tS, tS+50 )
-    plot( c, signal, 'Intensity', tS, tM )
+    for time in times:
+        plot( c, signal, tag+'_Intensity', tS, tS+time )
 
 ## Rebin, fit and plot wiggle plot
 
@@ -49,14 +52,10 @@ fit.SetNpx(10000)
 signal.Fit("fit","SREMQ")
 
 if ( printPlot == 1 ):
-    plot( c, signal, 'FittedWiggle', startFitTime, startFitTime+1 )
-    plot( c, signal, 'FittedWiggle', startFitTime, startFitTime+10 )
-    plot( c, signal, 'FittedWiggle', startFitTime, startFitTime+50 )
-    plot( c, signal, 'FittedWiggle', startFitTime, startFitTime+100 )
-    plot( c, signal, 'FittedWiggle', startFitTime, startFitTime+200 )
-    plot( c, signal, 'FittedWiggle', startFitTime, endFitTime )
-    plot( c, signal, 'FittedWiggle', endFitTime-200, endFitTime )
-    plot( c, signal, 'FittedWiggle', endFitTime-100, endFitTime )
+    for time in times:
+        plot( c, signal, tag + '_FittedWiggle', startFitTime, startFitTime+time )
+    plot( c, signal, tag + '_FittedWiggle', endFitTime-200, endFitTime )
+    plot( c, signal, tag + '_FittedWiggle', endFitTime-100, endFitTime )
 
 
 ## Produce finely binned and normalized wiggle plot to original intensity histogram
@@ -70,11 +69,8 @@ for i in range(nBins):
     norm.SetBinContent(i,fit.Eval(norm.GetBinCenter(i))/rebinFactor)
     
 if ( printPlot == 1 ):
-    plot( c, norm, 'WiggleFRS', tS, tS+1 )
-    plot( c, norm, 'WiggleFRS', tS, tS+10 )
-    plot( c, norm, 'WiggleFRS', tS, tS+50 )
-    plot( c, norm, 'WiggleFRS', tS, tS+100 )
-    plot( c, norm, 'WiggleFRS', tS, tM )
+    for time in times:
+        plot( c, norm, tag + '_WiggleFRS', tS, tS+time )
 
 norm.Write("wiggleHistogram")
 
@@ -87,10 +83,8 @@ fr.Write("fr")
 ## Print and save FRS histogram
 
 if ( printPlot == 1 ):
-    plot( c, fr, 'FRS', tS, tS+1 )
-    plot( c, fr, 'FRS', tS, tS+10 )
-    plot( c, fr, 'FRS', tS, tS+50 )
-    plot( c, fr, 'FRS', tS, tM )
+    for time in times:
+        plot( c, fr, tag+'_FRS', tS, tS+time )
 
 ## Close output ROOT file
 

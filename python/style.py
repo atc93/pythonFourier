@@ -13,11 +13,11 @@ def setCanvasStyle( c ):
     r.gPad.SetTicks(1);
     c.SetLeftMargin(0.15);
     c.SetRightMargin(0.05);
-    c.SetTopMargin(0.055);
+    c.SetTopMargin(0.075);
     c.SetBottomMargin(0.15);
 
-def setHistogramStyle( h, xAxisTitle, yAxisTitle ):
-    h.SetTitle('');
+def setHistogramStyle( h, title, xAxisTitle, yAxisTitle ):
+    h.SetTitle( title );
     h.GetXaxis().CenterTitle();
     h.GetXaxis().SetTitle(xAxisTitle);
     h.GetYaxis().CenterTitle();
@@ -29,3 +29,21 @@ def setHistogramStyle( h, xAxisTitle, yAxisTitle ):
     h.GetYaxis().SetTitleSize(0.055);
     h.GetYaxis().SetLabelSize(0.05);
     h.SetLineColor(4);
+
+def setCollimatorAperture( pt, pt2 ):
+    pt.AddText("collimators");
+    pt.AddText("aperture");
+    pt.SetShadowColor(0);
+    pt.SetBorderSize(1);
+    pt.SetFillColor(0);
+    pt.SetLineWidth(1);
+    pt.SetLineColor(1);
+    pt.SetTextAngle(90);
+    pt2.AddText("collimators");
+    pt2.AddText("aperture");
+    pt2.SetShadowColor(0);
+    pt2.SetBorderSize(1);
+    pt2.SetFillColor(0);
+    pt2.SetLineWidth(1);
+    pt2.SetLineColor(1);
+    pt2.SetTextAngle(90);
