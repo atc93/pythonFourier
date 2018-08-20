@@ -14,7 +14,7 @@ def calc_sine_dist(t0, sine, binContent, binCenter):
         integral    = binContent*np.sin(2*math.pi*frequency*(binCenter-t0))*0.001
         sine.SetBinContent(i+1, (np.sum(integral)))
 
-def calc_parabola_dist(t0, firstApprox, parabola):
+def calc_parabola_dist(t0, tS, firstApprox, parabola):
     for i in range(150):
         frq = 6630.5 + i*1
         integral = 0
@@ -37,6 +37,6 @@ def minimization(parabola, cosine):
         y.append(cosine.GetBinContent(150-i))
 
     A = np.vstack([x, np.ones(len(x))]).T
-    m, c = np.linalg.lstSq(A, y,rcond=None)[0]
+    m, c = np.linalg.lstsq(A, y,rcond=None)[0]
 
     return m, c

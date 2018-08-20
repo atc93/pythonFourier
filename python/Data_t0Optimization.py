@@ -41,11 +41,9 @@ setCanvasStyle( c )
 
 ## Retrieve and plot histogram from ROOT file
 
-
 inFile = r.TFile( inputRootFile )
 fr = inFile.Get('fr')
 setHistogramStyle( fr, '', 'Time [#mus]', 'Intensity [a.u.]')
-
 
 ## Real transform
 
@@ -127,7 +125,7 @@ def optimizationLoop( t0Step, t0Array, minDelta ):
         c           .Draw()
     
         if ( printPlot == 1 ):
-            c.Print('plots/eps/Cosine_t0_{0:.4f}_tS_{1}_tM_{2}.eps'.format(t0, tS, tM))
+            c.Print('plots/eps/'+ tag + '_Cosine_t0_{0:.4f}_tS_{1}_tM_{2}.eps'.format(t0, tS, tM))
     
         innerLine = r.TLine(6662.799323395121, sineClone.GetMinimum(), 6662.799323395121, sineClone.GetMaximum())
         innerLine.SetLineWidth(3)
@@ -146,14 +144,16 @@ def optimizationLoop( t0Step, t0Array, minDelta ):
         c           .Draw()
     
         if ( printPlot == 1 ):
-            c.Print('plots/eps/Sine_t0_{0:.4f}_tS_{1}_tM_{2}.eps'.format(t0, tS, tM))
+            c.Print('plots/eps/' + tag + '_Sine_t0_{0:.4f}_tS_{1}_tM_{2}.eps'.format(t0, tS, tM))
 
 optimizationLoop( t0Step, t0Array, minDelta )
+
+print ' First  optimization done'
 
 plt.plot(t0Array, minDelta, 'rx', label='data')
 plt.ylabel('F.O.M.')
 plt.xlabel('t0 [ns]')
-plt.savefig('plots/eps/t0Opt_coarse_tS_{0}_tM_{1}.eps'.format(tS, tM))
+plt.savefig('plots/eps/' + tag + '_t0Opt_coarse_tS_{0}_tM_{1}.eps'.format(tS, tM))
 plt.close()
 
 ## Find Minimum
@@ -170,71 +170,93 @@ t0ArrayFine, minDeltaFine = array( 'd' ), array( 'd' )
 
 ## Run second optimization
 
-optimizationLoop( t0Step, t0ArrayFine, minDeltaFine )
-
-plt.plot(t0ArrayFine, minDeltaFine, 'rx', label='data')
-plt.ylabel('F.O.M.')
-plt.xlabel('t0 [ns]')
-plt.savefig('plots/eps/t0Opt_fine_tS_{0}_tM_{1}.eps'.format(tS, tM))
-plt.close()
-
-## Find minimum
-
-minFOM =  minDeltaFine.index(min(minDeltaFine))
-
-lowert0 = t0ArrayFine[minFOM] - 0.0005
-uppert0 = t0ArrayFine[minFOM] + 0.0005
-t0StepSize = 0.00005
-
-t0Step = int ( (uppert0 - lowert0 ) / t0StepSize ) + 1
-
-t0ArrayVeryFine, minDeltaVeryFine = array( 'd' ), array( 'd' )
+if ( optLevel > 1 ):
+    optimizationLoop( t0Step, t0ArrayFine, minDeltaFine )
+    
+    print ' Second optimization done'
+    
+    plt.plot(t0ArrayFine, minDeltaFine, 'rx', label='data')
+    plt.ylabel('F.O.M.')
+    plt.xlabel('t0 [ns]')
+    plt.savefig('plots/eps/' + tag + '_t0Opt_fine_tS_{0}_tM_{1}.eps'.format(tS, tM))
+    plt.close()
+    
+    ## Find minimum
+    
+    minFOM =  minDeltaFine.index(min(minDeltaFine))
+    
+    lowert0 = t0ArrayFine[minFOM] - 0.0005
+    uppert0 = t0ArrayFine[minFOM] + 0.0005
+    t0StepSize = 0.00005
+    
+    t0Step = int ( (uppert0 - lowert0 ) / t0StepSize ) + 1
+    
+    t0ArrayVeryFine, minDeltaVeryFine = array( 'd' ), array( 'd' )
 
 ## Run third optimization
 
-optimizationLoop( t0Step, t0ArrayVeryFine, minDeltaVeryFine )
-
-plt.plot(t0ArrayVeryFine, minDeltaVeryFine, 'rx', label='data')
-plt.ylabel('F.O.M.')
-plt.xlabel('t0 [ns]')
-plt.savefig('plots/eps/t0Opt_veryFine_tS_{0}_tM_{1}.eps'.format(tS, tM))
-plt.close()
-
-## Find minimum
-
-minFOM =  minDeltaVeryFine.index(min(minDeltaVeryFine))
-
-lowert0 = t0ArrayVeryFine[minFOM] - 0.0001
-uppert0 = t0ArrayVeryFine[minFOM] + 0.0001
-t0StepSize = 0.00001
-
-t0Step = int ( (uppert0 - lowert0 ) / t0StepSize ) + 1
-
-t0ArrayUltraFine, minDeltaUltraFine = array( 'd' ), array( 'd' )
+if ( optLevel > 2 ):
+    optimizationLoop( t0Step, t0ArrayVeryFine, minDeltaVeryFine )
+    
+    print ' Third  optimization done'
+    
+    plt.plot(t0ArrayVeryFine, minDeltaVeryFine, 'rx', label='data')
+    plt.ylabel('F.O.M.')
+    plt.xlabel('t0 [ns]')
+    plt.savefig('plots/eps/' + tag + '_t0Opt_veryFine_tS_{0}_tM_{1}.eps'.format(tS, tM))
+    plt.close()
+    
+    ## Find minimum
+    
+    minFOM =  minDeltaVeryFine.index(min(minDeltaVeryFine))
+    
+    lowert0 = t0ArrayVeryFine[minFOM] - 0.0001
+    uppert0 = t0ArrayVeryFine[minFOM] + 0.0001
+    t0StepSize = 0.00001
+    
+    t0Step = int ( (uppert0 - lowert0 ) / t0StepSize ) + 1
+    
+    t0ArrayUltraFine, minDeltaUltraFine = array( 'd' ), array( 'd' )
 
 ## Run fourth optimization
 
-optimizationLoop( t0Step, t0ArrayUltraFine, minDeltaUltraFine )
-
-plt.plot(t0ArrayUltraFine, minDeltaUltraFine, 'rx', label='data')
-plt.ylabel('F.O.M.')
-plt.xlabel('t0 [ns]')
-plt.savefig('plots/eps/t0Opt_ultraFine_tS_{0}_tM_{1}.eps'.format(tS, tM))
-plt.close()
-
-minFOM =  minDeltaVeryFine.index(min(minDeltaVeryFine))
-
-print 'Optimized t0: ', t0ArrayUltraFine[minFOM]
+if ( optLevel > 3 ):
+    optimizationLoop( t0Step, t0ArrayUltraFine, minDeltaUltraFine )
+    
+    print ' Fourth optimization done'
+    
+    plt.plot(t0ArrayUltraFine, minDeltaUltraFine, 'rx', label='data')
+    plt.ylabel('F.O.M.')
+    plt.xlabel('t0 [ns]')
+    plt.savefig('plots/eps/' + tag + '_t0Opt_ultraFine_tS_{0}_tM_{1}.eps'.format(tS, tM))
+    plt.close()
+    
+    minFOM =  minDeltaVeryFine.index(min(minDeltaVeryFine))
 
 ## All the steps on one plot
 
-t0Array.extend( t0ArrayFine )
-t0Array.extend( t0ArrayVeryFine )
-minDelta.extend( minDeltaFine )
-minDelta.extend( minDeltaVeryFine )
+if ( optLevel > 1 ):
+    t0Array.extend( t0ArrayFine )
+    minDelta.extend( minDeltaFine )
+if ( optLevel > 2 ):
+    t0Array.extend( t0ArrayVeryFine )
+    minDelta.extend( minDeltaVeryFine )
 
 plt.plot(t0Array, minDelta, 'rx', label='data')
 plt.ylabel('F.O.M.')
 plt.xlabel('t0 [ns]')
-plt.savefig('plots/eps/t0Opt_tS_{0}_tM_{1}.eps'.format(tS, tM))
+plt.savefig('plots/eps/' + tag + '_t0Opt_tS_{0}_tM_{1}.eps'.format(tS, tM))
 plt.close()
+
+text_file = open(str(outputTextFile), "w")
+
+if ( optLevel > 3 ):
+    text_file.write( '%f\n' % t0ArrayUltraFine[minFOM] )
+elif ( optLevel > 2 ):
+    text_file.write( '%f\n' % t0ArrayVeryFine[minFOM] )
+elif ( optLevel > 1 ):
+    text_file.write( '%f\n' % t0ArrayFine[minFOM] )
+else:
+    text_file.write( '%f\n' % t0Array[minFOM] )
+
+text_file.close()

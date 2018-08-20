@@ -10,22 +10,26 @@ cmdargs = str(sys.argv)
 
 inputRootFile   = str(sys.argv[1])
 outputRootFile  = str(sys.argv[2])
-outputTextFile  = str(sys.argv[3)
+outputTextFile  = str(sys.argv[3])
 histoName       = str(sys.argv[4])
 t0              = float(sys.argv[5]) # in mico-sec
 tS              = float(sys.argv[6]) # in mico-sec
 tM              = float(sys.argv[7]) # in mico-sec
-fieldIndex      = float(sys.argv[8)
+fieldIndex      = float(sys.argv[8])
 printPlot       = int(sys.argv[9])
 saveROOT        = int(sys.argv[10])
 tag             = str(sys.argv[11])
 
-print ' ================ '
-print '   t0 = ', t0
-print '   tS = ', tS
-print '   tM = ', tM
-print '   n  = ', fieldIndex
-print ' ================ '
+print ''
+print ' =============================='
+print ' == Fourier analysis routine =='
+print ' =============================='
+print '    t0 = ', t0
+print '    tS = ', tS
+print '    tM = ', tM
+print '    n  = ', fieldIndex
+print ' =============================='
+print ''
 
 ## Styling and plotting
 
@@ -34,11 +38,9 @@ setCanvasStyle( c )
 
 ## Retrieve and plot histogram from ROOT file
 
-
-inFile = r.TFile(fileName)
+inFile = r.TFile( inputRootFile )
 fr = inFile.Get('fr')
-setHistogramStyle( fr, 'Time [#mus]', 'Intensity [a.u.]')
-
+setHistogramStyle( fr, '', 'Time [#mus]', 'Intensity [a.u.]')
 
 ## Real transform
 
@@ -46,48 +48,42 @@ startBin = fr.FindBin(tS)
 endBin   = fr.FindBin(tM)
 
 # Copy histogram to numpy array
-# Need intermediate list step for good performance
-# Otherwise need to copy over and over the array to itSelf addingt one value...
-binCenter = np.array([])
-binContent = np.array([])
-a = []
-b = []
+binCenter   = np.empty( int(endBin-startBin+1), dtype=float )
+binContent  = np.empty( int(endBin-startBin+1), dtype=float )
 for j in range(startBin, endBin):
-    a.append( fr.GetBinContent(j) )
-    b.append( fr.GetBinCenter(j) )   
-    binContent = np.asarray(a)  
-    binCenter = np.asarray(b)   
+    binContent[j-startBin] = fr.GetBinContent(j)
+    binCenter[j-startBin] = fr.GetBinCenter(j)
 
 # Fourier analysis starts here
 
-intensity, radius, minDelta, = array( 'd' ), array( 'd' ), array( 'd' )
+intensity, radius = array( 'd' ), array( 'd' )
 
 cosine  = r.TH1D("cosine",  "cosine",   150,6630,6780)
 sine    = r.TH1D("sin",     "sine",     150,6630,6780)
 
-calc_cosine_dist(t0, cosine)
-calc_sine_dist(t0, sine)
+calc_cosine_dist(t0, cosine, binContent, binCenter)
+calc_sine_dist  (t0, sine, binContent, binCenter )
 
+# Extract minimum of distributions for t0 optimization
 cosine.GetXaxis().SetRangeUser(6630, 6700)
 minBin1 = cosine.GetMinimum()
 cosine.GetXaxis().SetRangeUser(6700, 6780)
 minBin2 = cosine.GetMinimum()
 cosine.GetXaxis().SetRangeUser(6630, 6780)
 
-fom = minBin1-minBin2
+# Calculate F.O.M.
+fom = abs( minBin1-minBin2 )
 
-minDelta.append(minBin1-minBin2)
 
 cosineClone = cosine.Clone()
-cosineClone.SetTitle('Real transform (t0= {0:.4f} #mus)'.format(t0))
-cosineClone.GetXaxis().SetTitle("Frequency [kHz]")
-cosineClone.GetXaxis().CenterTitle()
-cosineClone.GetXaxis().SetTitleOffset(1.3)
-cosineClone.SetLineColor(4)
-cosineClone.SetLineWidth(2)
-
+setHistogramStyle( cosineClone, 'Cosine transform (t0= {0:.1f} ns)'.format(t0*1000), 'Frequency [kHz]', 'Arbitrary' )
 cosineClone.SetMaximum( cosineClone.GetMaximum()*1.3 ) 
 cosineClone.SetMinimum( cosineClone.GetMinimum()*1.2 ) 
+
+sineClone = sine.Clone()
+setHistogramStyle( sineClone, 'Sine transform (t0= {0:.1f} ns)'.format(t0*1000), 'Frequency [kHz]', 'Arbitrary' )
+sineClone.SetMaximum( sineClone.GetMaximum()*1.3 ) 
+sineClone.SetMinimum( sineClone.GetMinimum()*1.2 ) 
 
 innerLine = r.TLine(6662.799323395121, cosineClone.GetMinimum(), 6662.799323395121, cosineClone.GetMaximum())
 innerLine.SetLineWidth(3)
@@ -96,22 +92,7 @@ outerLine.SetLineWidth(3)
 
 pt=r.TPaveText(6650,cosineClone.GetMaximum()*0.38,6674,cosineClone.GetMaximum()*0.52);
 pt2=r.TPaveText(6737,cosineClone.GetMaximum()*0.38,6759,cosineClone.GetMaximum()*0.52);
-pt.AddText("collimators");
-pt.AddText("aperture");
-pt.SetShadowColor(0);
-pt.SetBorderSize(1);
-pt.SetFillColor(0);
-pt.SetLineWidth(1);
-pt.SetLineColor(1);
-pt.SetTextAngle(90);
-pt2.AddText("collimators");
-pt2.AddText("aperture");
-pt2.SetShadowColor(0);
-pt2.SetBorderSize(1);
-pt2.SetFillColor(0);
-pt2.SetLineWidth(1);
-pt2.SetLineColor(1);
-pt2.SetTextAngle(90);    
+setCollimatorAperture( pt, pt2 )
 
 cosineClone.Draw()
 innerLine.Draw("same")
@@ -121,7 +102,26 @@ pt2.Draw("same")
 
 c.Draw()
 if ( printPlot == 1 ):
-    c.Print('plots/eps/Real_t0_{0:.5f}_tS_{1}_tM_{2}.eps'.format(t0, tS, tM))
+    c.Print('plots/eps/' + tag + '_Cosine_t0_{0:.5f}_tS_{1}_tM_{2}.eps'.format(t0, tS, tM))
+
+innerLine = r.TLine(6662.799323395121, sineClone.GetMinimum(), 6662.799323395121, sineClone.GetMaximum())
+innerLine.SetLineWidth(3)
+outerLine = r.TLine(6747.651727400435, sineClone.GetMinimum(), 6747.651727400435, sineClone.GetMaximum())
+outerLine.SetLineWidth(3)
+
+pt=r.TPaveText(6650,    sineClone.GetMaximum()*0.38,    6674,   sineClone.GetMaximum()*0.52);
+pt2=r.TPaveText(6737,   sineClone.GetMaximum()*0.38,    6759,   sineClone.GetMaximum()*0.52);
+setCollimatorAperture( pt, pt2 )
+
+sineClone.Draw()
+innerLine.Draw("same")
+outerLine.Draw("same")
+pt.Draw("same")
+pt2.Draw("same")
+
+c.Draw()
+if ( printPlot == 1 ):
+        c.Print('plots/eps/' + tag + '_Sine_t0_{0:.5f}_tS_{1}_tM_{2}.eps'.format(t0, tS, tM))
 
 ## First Apprxomiation
 
@@ -151,14 +151,8 @@ for iBin in range(minBin1, minBin2+1):
     approx.AddBinContent(iBin, -1*minA)
     
 approxClone = approx
-approxClone.SetTitle("First approximation")    
     
-approxClone.GetXaxis().SetTitle("Frequency [kHz]")
-approxClone.GetXaxis().CenterTitle()
-approxClone.GetXaxis().SetTitleOffset(1.3)
-approxClone.SetLineColor(4)
-approxClone.SetLineWidth(2)
-    
+setHistogramStyle( approxClone, 'First approximation', 'Frequency [kHz]', 'Arbitrary' )    
 approxClone.SetMaximum( approxClone.GetMaximum()*1.3 ) 
 approxClone.SetMinimum( -0.5 ) 
     
@@ -169,22 +163,7 @@ outerLine.SetLineWidth(3)
 
 pt=r.TPaveText(6650,approxClone.GetMaximum()*0.9,6674,approxClone.GetMaximum()*1);
 pt2=r.TPaveText(6737,approxClone.GetMaximum()*0.9,6759,approxClone.GetMaximum()*1);
-pt.AddText("collimators");
-pt.AddText("aperture");
-pt.SetShadowColor(0);
-pt.SetBorderSize(1);
-pt.SetFillColor(0);
-pt.SetLineWidth(1);
-pt.SetLineColor(1);
-pt.SetTextAngle(90);
-pt2.AddText("collimators");
-pt2.AddText("aperture");
-pt2.SetShadowColor(0);
-pt2.SetBorderSize(1);
-pt2.SetFillColor(0);
-pt2.SetLineWidth(1);
-pt2.SetLineColor(1);
-pt2.SetTextAngle(90);    
+setCollimatorAperture( pt, pt2 )
 
 approxClone.Draw()
 innerLine.Draw("same")
@@ -194,7 +173,7 @@ pt2.Draw("same")
 c.Draw()    
 
 if ( printPlot == 1 ):
-    c.Print('plots/eps/FirstApproximation_t0_{0:.5f}_tS_{1}_tM_{2}.eps'.format(t0, tS, tM))
+    c.Print('plots/eps/' + tag + '_FirstApproximation_t0_{0:.5f}_tS_{1}_tM_{2}.eps'.format(t0, tS, tM))
 
 
 # # Delta Correction
@@ -206,31 +185,24 @@ if ( printPlot == 1 ):
 parabola = cosine.Clone()
 parabola.Scale(0)
 
+calc_parabola_dist(t0, tS, approx, parabola)
 
 parabola.Draw()
-parabola.SetTitle("The parabola")
+parabola.SetTitle("Parabola")
 c.Update()
 c.Draw()
 
 
 # # 'a' and 'b'optimization
 
-# In[ ]:
-
-
-# a and b minimization
-
+a, b = minimization(parabola, cosine)
 
 # In[ ]:
-
 
 cosine.Draw()
 c.Draw()
-a,b = minimization()
 
 # # Scaled parabola
-
-# In[ ]:
 
 
 for iBin in range(1,151):
@@ -238,14 +210,7 @@ for iBin in range(1,151):
     
     
 parabolaClone = parabola.Clone()
-parabolaClone.SetTitle("Parabola")    
-    
-parabolaClone.GetXaxis().SetTitle("Frequency [kHz]")
-parabolaClone.GetXaxis().CenterTitle()
-parabolaClone.GetXaxis().SetTitleOffset(1.3)
-parabolaClone.SetLineColor(4)
-parabolaClone.SetLineWidth(2)
-    
+setHistogramStyle( parabolaClone, 'Parabola', 'Frequency [kHz]', 'Arbitrary' )    
 parabolaClone.SetMaximum( parabolaClone.GetMaximum()*1.15 ) 
 parabolaClone.SetMinimum( parabolaClone.GetMinimum()*0.85 ) 
     
@@ -280,7 +245,7 @@ pt.Draw("same")
 pt2.Draw("same")    
 c.Draw()    
 if ( printPlot == 1 ):
-    c.Print('plots/eps/Parabola_t0_{0:.5f}_tS_{1}_tM_{2}.eps'.format(t0, tS, tM))    
+    c.Print('plots/eps/' + tag + '_Parabola_t0_{0:.5f}_tS_{1}_tM_{2}.eps'.format(t0, tS, tM))    
 
 
 # # Complete distribution
@@ -294,14 +259,7 @@ for iBin in range(1,151):
 full.SetTitle("Complete distribution")    
 
 fullClone = full.Clone()
-fullClone.SetTitle("Complete distribution")    
-    
-fullClone.GetXaxis().SetTitle("Frequency [kHz]")
-fullClone.GetXaxis().CenterTitle()
-fullClone.GetXaxis().SetTitleOffset(1.3)
-fullClone.SetLineColor(4)
-fullClone.SetLineWidth(2)
-    
+setHistogramStyle( fullClone, 'Complete distribution', 'Frequency [kHz]', 'Arbitrary' )    
 fullClone.SetMaximum( fullClone.GetMaximum()*1.15 ) 
 fullClone.SetMinimum( -0.5 ) 
     
@@ -336,7 +294,7 @@ pt.Draw("same")
 pt2.Draw("same")    
 c.Draw()    
 if ( printPlot == 1 ):
-    c.Print('plots/eps/CompleteDistribution_t0_{0:.5f}_tS_{1}_tM_{2}.eps'.format(t0, tS, tM))    
+    c.Print('plots/eps/' + tag + '_CompleteDistribution_t0_{0:.5f}_tS_{1}_tM_{2}.eps'.format(t0, tS, tM))    
 
 
 # # Conversion frequency -> radius
@@ -362,12 +320,11 @@ speed = beta * 299792458
 intensity, radius = array( 'd' ), array( 'd' )
 
 for i in range(1, 150):
-    #print i, full.GetBinCenter(i)
     radius.append( speed / (2*math.pi*full.GetBinCenter(i)) )
     intensity.append( full.GetBinContent(i))
 
 
-xe = np.average(radius, axis=0, weightS=intensity)   
+xe = np.average(radius, axis=0, weights=intensity)   
 maxI = np.amax(intensity)
 intensity = intensity/maxI
 
@@ -389,7 +346,7 @@ graph.SetMarkerSize(0.6)
 graph.SetMarkerColor(4)
 graph.SetLineColor(4)
 graphMin = -0.05
-graphMax = 1.1
+graphMax = 1.05
 graph.SetMaximum(graphMax)
 graph.SetMinimum(graphMin)
 
@@ -463,12 +420,12 @@ pt3.Draw("same")
 c.Draw()
 
 if ( printPlot == 1 ):
-    c.Print('plotS/eps/Radial_t0_{0:.5f}_tS_{1}_tM_{2}.eps'.format(t0, tS, tM))    
-    c.Print('plotS/png/Radial_t0_{0:.5f}_tS_{1}_tM_{2}.png'.format(t0, tS, tM))    
+    c.Print('plots/eps/' + tag + '_Radial_t0_{0:.5f}_tS_{1}_tM_{2}.eps'.format(t0, tS, tM))    
+    c.Print('plots/png/' + tag + '_Radial_t0_{0:.5f}_tS_{1}_tM_{2}.png'.format(t0, tS, tM))    
 
 
-for x,y in zip(radius, intensity):
-    print x, y
+#for x,y in zip(radius, intensity):
+#    print x, y
 
 #print 'a = ', a
 #print 'b = ', b

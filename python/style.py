@@ -29,6 +29,7 @@ def setHistogramStyle( h, title, xAxisTitle, yAxisTitle ):
     h.GetYaxis().SetTitleSize(0.055);
     h.GetYaxis().SetLabelSize(0.05);
     h.SetLineColor(4);
+    h.SetLineWidth(2)
 
 def setCollimatorAperture( pt, pt2 ):
     pt.AddText("collimators");
